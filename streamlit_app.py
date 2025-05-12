@@ -17,8 +17,10 @@ try:
     cnx = st.connection("snowflake")
     session = cnx. session ()
     #session = get_active_session()
-    fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
-    fruit_names = [row['FRUIT_NAME'] for row in fruit_df.collect()]
+    fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
+    st.dataframe(data=fruit_df, use_container_width=True)
+    st.stop()
+    # fruit_names = [row['FRUIT_NAME'] for row in fruit_df.collect()]
 
     # Let user pick up to 5 fruits
     ingredients_list = st.multiselect(
