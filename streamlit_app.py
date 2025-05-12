@@ -35,6 +35,9 @@ try:
     # Checkbox for whether the order is filled
     order_filled = st.checkbox("Mark order as filled?")
 
+    # Initialize insert_stmt to None
+    insert_stmt = None
+
     # If both name and fruits are selected
     if ingredients_list and name_on_order:
         ingredients_string = ' '.join(ingredients_list)
@@ -56,14 +59,16 @@ try:
                 VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
             """
         else:
-            st.error("⚠️ Please ensure the correct ingredients and filled status as per the DORA check.")
+            st.warning("⚠️ Please ensure the correct ingredients and filled status as per the DORA check.")
 
-        st.write("Your order will be recorded with:")
-        st.code(insert_stmt, language='sql')
+        # Only attempt to submit if insert_stmt is defined
+        if insert_stmt:
+            st.write("Your order will be recorded with:")
+            st.code(insert_stmt, language='sql')
 
-        if st.button("Submit Order"):
-            session.sql(insert_stmt).collect()
-            st.success("✅ Your Smoothie has been ordered!")
+            if st.button("Submit Order"):
+                session.sql(insert_stmt).collect()
+                st.success("✅ Your Smoothie has been ordered!")
 
     elif not name_on_order and st.button("Submit Order"):
         st.warning("⚠️ Please enter your name before placing the order.")
@@ -87,6 +92,3 @@ try:
 except Exception as e:
     st.error(f"❌ Error: {e}")
     st.warning("Make sure your Snowflake connection is properly set up.")
-
-
-
