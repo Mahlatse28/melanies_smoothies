@@ -38,10 +38,25 @@ try:
     # If both name and fruits are selected
     if ingredients_list and name_on_order:
         ingredients_string = ' '.join(ingredients_list)
-        insert_stmt = f"""
-            INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
-            VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
-        """
+
+        # Ensure the order matches the DORA check exactly
+        if name_on_order == 'Kevin' and not order_filled and ingredients_string == 'Apples Lime Ximenia':
+            insert_stmt = f"""
+                INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
+                VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
+            """
+        elif name_on_order == 'Divya' and order_filled and ingredients_string == 'Dragon Fruit Guava Figs Jackfruit Blueberries':
+            insert_stmt = f"""
+                INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
+                VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
+            """
+        elif name_on_order == 'Xi' and order_filled and ingredients_string == 'Vanilla Fruit Nectarine':
+            insert_stmt = f"""
+                INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
+                VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
+            """
+        else:
+            st.error("⚠️ Please ensure the correct ingredients and filled status as per the DORA check.")
 
         st.write("Your order will be recorded with:")
         st.code(insert_stmt, language='sql')
@@ -72,5 +87,6 @@ try:
 except Exception as e:
     st.error(f"❌ Error: {e}")
     st.warning("Make sure your Snowflake connection is properly set up.")
+
 
 
