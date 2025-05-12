@@ -48,6 +48,7 @@ try:
                 INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
                 VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
             """
+            
         elif name_on_order == 'Divya' and order_filled and ingredients_string == 'Dragon Fruit Guava Figs Jackfruit Blueberries':
             insert_stmt = f"""
                 INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
