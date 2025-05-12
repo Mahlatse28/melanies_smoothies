@@ -1,9 +1,9 @@
-# Import python packages
+# Import packages
 import streamlit as st
-#from snowflake.snowpark.context import get_active_session
+import requests
 from snowflake.snowpark.functions import col
 
-# Write directly to the app
+# App title and intro
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
@@ -12,52 +12,62 @@ name_on_order = st.text_input("Name on Smoothie")
 if name_on_order:
     st.write("The name on your smoothie will be", name_on_order)
 
-# Connect to Snowflake and get the fruit names
+# Try to connect to Snowflake and fetch fruit options
 try:
+    # Connect to Snowflake using st.connection
     cnx = st.connection("snowflake")
-    session = cnx. session ()
-    #session = get_active_session()
-    fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
-    fruit_names = [row['FRUIT_NAME'] for row in fruit_df.collect()]
-    st.dataframe(data=fruit_df, use_container_width=True)
-    st.stop()
+    session = cnx.session()
 
-    # Let user pick up to 5 fruits
+    # Get FRUIT_NAME and SEARCH_ON from fruit_options table
+    fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
+    fruit_data = fruit_df.collect()
+
+    # Create a list of fruit names for display and a map to SEARCH_ON
+    fruit_names = [row['FRUIT_NAME'] for row in fruit_data]
+    search_map = {row['FRUIT_NAME']: row['SEARCH_ON'] for row in fruit_data}
+
+    # Show fruit data in a dataframe for reference (can remove later)
+    st.dataframe(fruit_df.to_pandas(), use_container_width=True)
+
+    # Let user select ingredients
     ingredients_list = st.multiselect(
         'Choose up to 5 ingredients:',
         fruit_names,
         max_selections=5
     )
 
-    # Only build the insert if something is selected and name is given
+    # Insert order if name and ingredients are provided
     if ingredients_list and name_on_order:
-        ingredients_string = ' '.join(ingredients_list)
+        ingredients_string = ', '.join(ingredients_list)
         my_insert_stmt = f"""
-            insert into smoothies.public.orders(ingredients, name_on_order)
-            values ('{ingredients_string}', '{name_on_order}')
+            INSERT INTO smoothies.public.orders(ingredients, name_on_order)
+            VALUES ('{ingredients_string}', '{name_on_order}')
         """
         st.write("Here's your insert statement:")
         st.code(my_insert_stmt, language='sql')
-        
+
         if st.button('Submit Order'):
             session.sql(my_insert_stmt).collect()
             st.success('Your Smoothie is ordered!', icon="✅")
 
+    # Show nutrition info using API
+    if ingredients_list:
+        for fruit in ingredients_list:
+            search_term = search_map.get(fruit, fruit).lower().replace(' ', '%20')
+            api_url = f"https://my.smoothiefroot.com/api/fruit/{search_term}"
+            response = requests.get(api_url)
+
+            st.subheader(f"{fruit} Nutrition Information")
+
+            if response.status_code == 200:
+                st.dataframe(response.json(), use_container_width=True)
+            else:
+                st.warning(f"No data found for {fruit} (searched for '{search_term}')")
+
 except Exception as e:
     st.error(f"An error occurred: {e}")
-    st.warning("Please ensure you have the correct Snowflake connection configured.")
+    st.warning("Please ensure you have a valid Snowflake connection and available warehouse credits.")
 
-# Handle case where no name is provided
+# Catch missing name input if submit clicked
 if not name_on_order and st.button('Submit Order'):
     st.warning("Please enter your name before placing an order.")
-
-
-import requests
-if ingredients_list:
-    ingredients_string = ''
-
-    for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + ''
-        st.subheader(fruit_chosen + ' Nutrition Information')
-        smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
