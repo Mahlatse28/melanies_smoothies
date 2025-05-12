@@ -1,6 +1,6 @@
 # Import python packages
 import streamlit as st
-from snowflake.snowpark.context import get_active_session
+#from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
@@ -14,7 +14,9 @@ if name_on_order:
 
 # Connect to Snowflake and get the fruit names
 try:
-    session = get_active_session()
+    cnx = st.connection("snowflake")
+    session = cnx. session ()
+    #session = get_active_session()
     fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
     fruit_names = [row['FRUIT_NAME'] for row in fruit_df.collect()]
 
