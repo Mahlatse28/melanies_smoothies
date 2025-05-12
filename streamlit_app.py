@@ -15,8 +15,7 @@ if name_on_order:
 
 # Connect to Snowflake
 try:
-    # Using Streamlit connection
-    cnx = st.connection("snowflake")
+    cnx = st.connection("snowflake")  # Streamlit Snowflake connection
     session = cnx.session()
 
     # Query fruit data
@@ -33,42 +32,45 @@ try:
         max_selections=5
     )
 
-    # Insert order if fruits and name are selected
+    # Checkbox for whether the order is filled
+    order_filled = st.checkbox("Mark order as filled?")
+
+    # If both name and fruits are selected
     if ingredients_list and name_on_order:
         ingredients_string = ' '.join(ingredients_list)
         insert_stmt = f"""
-            INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-            VALUES ('{ingredients_string}', '{name_on_order}')
+            INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
+            VALUES ('{ingredients_string}', '{name_on_order}', {str(order_filled).upper()})
         """
-        st.write("Here's your insert statement:")
+
+        st.write("Your order will be recorded with:")
         st.code(insert_stmt, language='sql')
 
-        if st.button('Submit Order'):
+        if st.button("Submit Order"):
             session.sql(insert_stmt).collect()
-            st.success('Your Smoothie is ordered!', icon="✅")
+            st.success("✅ Your Smoothie has been ordered!")
 
-    elif not name_on_order and st.button('Submit Order'):
-        st.warning("Please enter your name before placing an order.")
+    elif not name_on_order and st.button("Submit Order"):
+        st.warning("⚠️ Please enter your name before placing the order.")
 
     # Show nutrition info for selected fruits
     if ingredients_list:
         for fruit_chosen in ingredients_list:
-            # Get SEARCH_ON value
             search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
-
             st.subheader(f"{fruit_chosen} Nutrition Information")
+
             try:
                 response = requests.get(f"https://fruityvice.com/api/fruit/{search_on.lower()}")
                 if response.status_code == 200:
                     fruity_data = response.json()
                     st.dataframe(data=pd.json_normalize(fruity_data), use_container_width=True)
                 else:
-                    st.warning(f"No nutrition info found for '{fruit_chosen}' (SEARCH_ON = '{search_on}').")
+                    st.warning(f"No nutrition info found for '{fruit_chosen}'")
             except Exception as e:
                 st.error(f"API error for {fruit_chosen}: {e}")
 
 except Exception as e:
-    st.error(f"An error occurred: {e}")
-    st.warning("Please ensure you have the correct Snowflake connection configured.")
+    st.error(f"❌ Error: {e}")
+    st.warning("Make sure your Snowflake connection is properly set up.")
 
 
