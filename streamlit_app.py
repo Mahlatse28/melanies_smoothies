@@ -40,4 +40,4 @@ if ingredients_list and name_on_order:
         session.sql(my_insert_stmt).collect()
         st.success('Your Smoothie is ordered!', icon="✅")
     elif not name_on_order:
-    st.warning("Please enter your name before placing an order.")
+        st.warning("Please enter your name before placing an order.")
